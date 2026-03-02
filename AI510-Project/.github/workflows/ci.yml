@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DATA_PATH: /workspaces/IA-510-Project/AI510-Project/dataset/GooglePlay_App_Data.csv
+      DATA_PATH: dataset/GooglePlay_App_Data.csv
       TEXT_COL: review_description
       TITLE_COL: review_title
       USE_RATING: "true"

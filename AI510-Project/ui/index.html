@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sentiment Analyzer</title>
+  <link rel="stylesheet" href="/ui/style.css" />
+</head>
+<body>
+  <div class="bg"></div>
+
+  <main class="container">
+    <header class="header">
+      <div class="badge">AI 510 • Sentiment Analysis</div>
+      <h1>Sentiment Analyzer</h1>
+      <p class="subtitle">
+        Enter a Google Play review and instantly classify it as <b>Positive</b>, <b>Neutral</b>, or <b>Negative</b>.
+      </p>
+    </header>
+
+    <section class="card">
+      <label class="label" for="review">Review text</label>
+      <textarea id="review" class="textarea" rows="6"
+        placeholder="e.g., Worst app ever. Keeps crashing and freezing..."></textarea>
+
+      <div class="row">
+        <button id="analyzeBtn" class="btn primary">Analyze</button>
+        <button id="clearBtn" class="btn ghost">Clear</button>
+
+        <div class="spacer"></div>
+
+        <div class="toggle">
+          <span class="toggle-label">Neutral sensitivity</span>
+          <input id="confSlider" type="range" min="0.50" max="0.75" step="0.01" value="0.55" />
+          <span id="confValue" class="toggle-value">0.55</span>
+        </div>
+      </div>
+
+      <div id="result" class="result hidden">
+        <div class="result-left">
+          <div id="pill" class="pill">—</div>
+          <div class="meta">
+            <div class="meta-line"><span class="meta-k">Source:</span> <span id="source">—</span></div>
+            <div class="meta-line"><span class="meta-k">Confidence:</span> <span id="confidence">—</span></div>
+          </div>
+        </div>
+        <div class="result-right">
+          <div class="hint-title">Tip</div>
+          <div class="hint-text" id="hintText">Try phrases like “amazing”, “okay”, or “worst” to see distinct outputs.</div>
+        </div>
+      </div>
+
+      <div id="error" class="error hidden"></div>
+    </section>
+
+    <footer class="footer">
+      <span>API:</span> <a href="/docs" target="_blank" rel="noreferrer">Swagger Docs</a>
+      <span class="dot">•</span>
+      <a href="/health" target="_blank" rel="noreferrer">Health</a>
+    </footer>
+  </main>
+
+  <script src="/ui/app.js"></script>
+</body>
+</html>
