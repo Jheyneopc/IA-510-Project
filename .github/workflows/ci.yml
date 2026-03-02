@@ -10,12 +10,14 @@ jobs:
   train-validate:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: AI510-Project
+
     env:
-      PROJECT_DIR: AI510-Project
-      DATA_PATH: AI510-Project/dataset/GooglePlay_App_Data.csv
+      DATA_PATH: dataset/GooglePlay_App_Data.csv
       TEXT_COL: review_description
       TITLE_COL: review_title
-      USE_RATING: "true"
       RATING_COL: rating
       MIN_ACCURACY: "0.70"
 
@@ -30,11 +32,17 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r "$PROJECT_DIR/model/requirements.txt"
+          pip install -r model/requirements.txt
+
+      - name: List files (debug)
+        run: |
+          pwd
+          ls -la
+          ls -la dataset || true
 
       - name: Train model
         run: |
-          python "$PROJECT_DIR/model/train.py" \
+          python model/train.py \
             --data_path "$DATA_PATH" \
             --text_col "$TEXT_COL" \
             --title_col "$TITLE_COL" \
@@ -43,24 +51,23 @@ jobs:
 
       - name: Verify artifacts
         run: |
-          test -f "$PROJECT_DIR/model/artifacts/tfidf.pkl"
-          test -f "$PROJECT_DIR/model/artifacts/sentiment_model.pkl"
-          test -f "$PROJECT_DIR/model/artifacts/metrics.json"
+          test -f model/artifacts/tfidf.pkl
+          test -f model/artifacts/sentiment_model.pkl
+          test -f model/artifacts/metrics.json
 
       - name: Validate accuracy threshold
         run: |
           python - <<'PY'
           import json, os
-          project_dir = os.getenv("PROJECT_DIR", "AI510-Project")
           min_acc = float(os.getenv("MIN_ACCURACY", "0.70"))
-          metrics_path = os.path.join(project_dir, "model", "artifacts", "metrics.json")
-
-          with open(metrics_path, "r") as f:
+          with open("model/artifacts/metrics.json","r") as f:
               m = json.load(f)
-
           acc = float(m["accuracy"])
           print("Accuracy:", acc)
-
           if acc < min_acc:
               raise SystemExit(f"Accuracy below threshold ({min_acc}). Failing CI.")
           PY
+
+      - name: Build Docker image
+        run: |
+          docker build -t sentiment-api .
