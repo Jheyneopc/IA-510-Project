@@ -1,82 +1,119 @@
-📘 AI510 Project
-Automated Sentiment Analysis Pipeline with CI/CD and Web UI
-📌 Overview
+Sentiment Analysis Pipeline with CI/CD and Cloud Deployment
+Project Overview
 
-This project implements a complete end-to-end sentiment analysis system using Google Play Store reviews. The system integrates:
+This project implements a production-oriented sentiment analysis system that classifies Google Play Store user reviews into positive, neutral, and negative sentiments.
 
-Data preprocessing and label generation
+The system combines classical NLP techniques with modern MLOps practices, demonstrating how a machine learning model can move from experimentation to a reproducible, deployable service.
+
+Key components include:
 
 TF-IDF feature extraction
 
 Logistic Regression classifier
 
-Model artifact serialization
+Automated model training and evaluation
 
-REST API using FastAPI
+REST API deployment using FastAPI
 
-Vibrant web-based UI (browser input → browser output)
+Interactive browser-based UI
 
 Docker containerization
 
-GitHub Actions CI/CD pipeline with accuracy validation
+CI/CD automation using GitHub Actions
 
-The project demonstrates how a machine learning model transitions from experimental training to a production-style, automated, deployable system.
+Cloud deployment using Azure Container Apps
 
-🏗 Project Architecture
-AI510-Project/
-│
-├── .github/workflows/ci.yml      # CI/CD automation
+The final pipeline demonstrates how AI systems can be built, validated, deployed, and operated in a cloud environment.
+
+System Architecture
+
+The system follows a modular architecture separating training, inference, deployment, and automation.
+
+Dataset
+   │
+   ▼
+Data Preprocessing
+(cleaning + label generation)
+   │
+   ▼
+TF-IDF Vectorization
+   │
+   ▼
+Logistic Regression Model
+   │
+   ▼
+Model Artifacts
+tfidf.pkl
+sentiment_model.pkl
+metrics.json
+   │
+   ▼
+FastAPI Inference API
+   │
+   ├── Browser UI
+   │
+   └── REST Endpoint (/predict)
+   │
+   ▼
+Docker Container
+   │
+   ▼
+Azure Container Apps Deployment
+   │
+   ▼
+Public Sentiment Prediction Service
+Repository Structure
+AI510-Project
 │
 ├── dataset/
 │   └── GooglePlay_App_Data.csv
 │
 ├── model/
-│   ├── train.py                  # Training pipeline
-│   ├── predict.py                # CLI prediction
-│   ├── requirements.txt          # Dependencies
-│   └── artifacts/                # Generated model files
+│   ├── artifacts/
+│   ├── predict.py
+│   ├── train.py
+│   └── requirements.txt
 │
-├── ui/                           # Vibrant web UI
+├── ui/
 │   ├── index.html
-│   ├── style.css
-│   └── app.js
+│   ├── app.js
+│   └── styles.css
 │
-├── app.py                        # FastAPI backend + UI serving
-├── Dockerfile                    # Container configuration
+├── app.py
+├── Dockerfile
 ├── README.md
-└── .gitignore
-🧠 Model Description
+│
+└── .github/
+    └── workflows/
+        ├── ci.yml
+        └── azure-deploy.yml
+Dataset
 
-The system uses:
+The dataset consists of Google Play Store user reviews.
 
-TF-IDF vectorization (1–2 grams, max 5000 features)
+Each record includes:
 
-Logistic Regression classifier
+review title
 
-Class balancing enabled
+review description
 
-Confidence gating mechanism
+rating (1–5)
 
-Keyword-based override for demo stability
+Sentiment labels are derived from ratings:
 
-Sentiment classes:
+Rating	Sentiment
+≤ 2	Negative
+2.5 – 3.5	Neutral
+> 3.5	Positive
 
-Positive
+Dataset source:
 
-Neutral
+https://www.kaggle.com/datasets/lava18/google-play-store-apps
 
-Negative
+Model Training
 
-For live demo stability:
+To train the sentiment model locally:
 
-Strong positive/negative phrases trigger keyword override.
-
-Low-confidence predictions default to neutral.
-
-🚀 Running in GitHub Codespaces (Recommended Demo)
-1️⃣ Install Dependencies
-pip install -r model/requirements.txt
-2️⃣ Train the Model
 python model/train.py \
   --data_path dataset/GooglePlay_App_Data.csv \
   --text_col review_description \
@@ -84,238 +121,222 @@ python model/train.py \
   --use_rating \
   --rating_col rating
 
-Artifacts created in:
+Training will generate artifacts:
 
-model/artifacts/
-├── tfidf.pkl
-├── sentiment_model.pkl
-└── metrics.json
-3️⃣ Start the API + UI Server
+model/artifacts/tfidf.pkl
+model/artifacts/sentiment_model.pkl
+model/artifacts/metrics.json
 
-⚠️ Important for Codespaces: Use 0.0.0.0
+The metrics file includes:
+
+accuracy
+
+macro F1 score
+
+weighted F1 score
+
+confusion matrix
+
+dataset statistics
+
+Running the API Locally
+
+Start the FastAPI server:
 
 uvicorn app:app --reload --host 0.0.0.0 --port 8000
-4️⃣ Open the Web UI
 
-Go to Ports tab in Codespaces
+Open browser:
 
-Find port 8000
-
-Click Open in Browser
-
-Or manually open:
-
-https://<your-codespace-url>/ 
-🎨 Web UI Features
-
-The UI allows:
-
-Direct review text input
-
-Instant sentiment prediction
-
-Confidence score display
-
-Source explanation (model / keyword override / confidence gate)
-
-Adjustable neutral sensitivity slider
-
-Clean, vibrant visual feedback
-
-No terminal commands required during demo.
-
-🧪 Demo Inputs (Guaranteed Distinct Outputs)
-
-Use these for safe presentation:
-
-✅ Positive
-This app is amazing and super useful. Great experience!
-⚖️ Neutral
-It is okay, nothing special. Works sometimes.
-❌ Negative
-Worst app ever. Keeps crashing and freezing. Totally broken.
-🖥 CLI Usage (Optional)
-Train
-python model/train.py --data_path dataset/GooglePlay_App_Data.csv \
-  --text_col review_description \
-  --title_col review_title \
-  --use_rating \
-  --rating_col rating
-Predict
-python model/predict.py --text "This app is amazing!"
-🔌 API Endpoints
-Root (UI)
-GET /
+http://localhost:8000
+API Endpoints
 Health Check
 GET /health
-Predict
+
+Example response:
+
+{
+  "status": "ok",
+  "artifacts_exist": true,
+  "model_loaded": true
+}
+Model Info
+GET /info
+Sentiment Prediction
 POST /predict
+
+Request example:
+
+{
+  "text": "This app works perfectly!"
+}
+
+Response example:
+
+{
+  "sentiment": "positive",
+  "source": "model",
+  "confidence": 0.82
+}
+Web Interface
+
+The system includes a browser-based interface allowing real-time predictions.
+
+Features:
+
+review text input
+
+sentiment prediction display
+
+confidence score
+
+UI color indicators
+
+Access:
+
+http://localhost:8000
+Hybrid Inference Mechanism
+
+The system uses a hybrid prediction strategy to improve reliability.
+
+Keyword override
+
+Strong sentiment keywords trigger deterministic predictions.
 
 Example:
 
-curl -X POST http://127.0.0.1:8000/predict \
-  -H "Content-Type: application/json" \
-  -d '{"text":"Worst app ever. Keeps crashing."}'
-🐳 Docker Deployment
-Build
+"worst app ever" → negative
+
+Confidence gating
+
+If model confidence is below a threshold:
+
+confidence < 0.55
+
+Prediction defaults to neutral.
+
+This reduces unstable predictions caused by dataset imbalance.
+
+Docker Deployment
+
+Build container:
+
 docker build -t sentiment-api .
-Run (Avoid Port Conflict in Codespaces)
 
-If port 8000 is already in use:
+Run container:
 
-docker run -e PORT=8000 -p 8001:8000 sentiment-api
+docker run -p 8000:8000 sentiment-api
 
-Then open port 8001 in Codespaces.
+Open:
 
-🔁 CI/CD Workflow (GitHub Actions)
+http://localhost:8000
+CI/CD Pipeline
 
-Workflow file:
+The project integrates GitHub Actions for automated validation.
 
-.github/workflows/ci.yml
+The CI workflow performs:
 
-Automated steps:
+Dependency installation
 
-Checkout repository
+Model retraining
 
-Install dependencies
+Artifact verification
 
-Train model
+Performance validation
 
-Verify artifacts exist
+Docker build testing
 
-Validate minimum accuracy threshold
+The pipeline enforces a minimum accuracy threshold to prevent model degradation.
 
-Build Docker image
+Azure Cloud Deployment
 
-If accuracy drops below threshold, CI fails automatically.
+The project deploys automatically to Azure Container Apps.
 
-📊 Evaluation Metrics
+Deployment pipeline:
 
-Generated in:
+GitHub Push
+     │
+     ▼
+GitHub Actions CI
+     │
+Train Model
+Validate Metrics
+Build Docker Image
+     │
+     ▼
+Azure Container Apps Deployment
+     │
+     ▼
+Public API Endpoint
 
-model/artifacts/metrics.json
+Environment variables used in Azure:
 
-Includes:
+PORT=8000
+ARTIFACTS_DIR=model/artifacts
+MIN_CONFIDENCE=0.55
+APP_VERSION=1.3
 
-Accuracy
+After deployment the application becomes publicly accessible through the Azure endpoint.
 
-Precision
+Reproducibility
 
-Recall
+The pipeline ensures reproducibility through:
 
-F1-score
+deterministic label generation
 
-Confusion matrix
+serialized model artifacts
 
-Label distribution
+CI validation
 
-Model parameters
+containerized execution environment
 
-⚙️ Technical Highlights
+automated deployment pipeline
 
-Classical NLP baseline (TF-IDF + Logistic Regression)
+This guarantees consistent behavior across development, testing, and production environments.
 
-Class imbalance handling
+Technologies Used
 
-Confidence-based neutral gating
+Python
 
-Keyword override safety mechanism
+Scikit-learn
 
-Modular architecture
+FastAPI
 
-Production-style containerization
+Docker
 
-Automated validation pipeline
+GitHub Actions
 
-🛡 Ethical AI Considerations
+Azure Container Apps
 
-Deterministic rating-to-label mapping
+Pandas
 
-No personal data usage
+Joblib
 
-Transparent evaluation metrics
+Future Improvements
 
-Class imbalance explicitly reported
+Potential extensions include:
 
-Explainable linear model architecture
+transformer-based models (BERT)
 
-🧩 Future Improvements
+dataset balancing techniques
 
-Transformer-based models (e.g., BERT)
+model monitoring and drift detection
 
-Cloud deployment (AWS/Azure)
+experiment tracking using MLflow
 
-Model monitoring & drift detection
+multilingual sentiment analysis
 
-Expanded dataset for better class balance
+automated retraining pipelines
 
-Multi-language sentiment support
+Authors
 
-👥 Team Notes
+Ashwin Shastry Paturi
+Jheyne de Oliveira Panta Cordeiro
+Salvador Eng Deng
+Shagun Sharma Tamta
 
-For a full demo:
+AI 510 – Artificial Intelligence in Cloud Computing
+City University of Seattle
 
-Train model
+Final Note
 
-Run server
-
-Open UI
-
-Enter demo inputs
-
-Show confidence + explanation
-
-Optionally show CI passing in GitHub
-
-Optionally show Docker container running
-
-No manual terminal prediction is required during presentation.
-
-📄 License
-
-## Azure Container Apps Deployment
-
-This project supports cloud deployment using Azure Container Apps with Azure Container Registry.
-
-### Required GitHub Secrets
-Add these in **GitHub → Settings → Secrets and variables → Actions**:
-
-- `AZURE_CREDENTIALS`
-- `AZURE_RG`
-- `AZURE_ACR_NAME`
-- `AZURE_CONTAINERAPP_ENV`
-- `AZURE_CONTAINERAPP_NAME`
-
-### Deployment Behavior
-On every push to `main`, GitHub Actions will:
-
-- Build the Docker image from `AI510-Project/`
-- Push it through the Azure deploy action
-- Deploy the application to Azure Container Apps
-
-### Runtime Environment Variables
-The deployment uses:
-
-- `PORT=8000`
-- `ARTIFACTS_DIR=model/artifacts`
-- `MIN_CONFIDENCE=0.55`
-
-### Cloud Endpoints
-After deployment, the Azure URL supports:
-
-- `/` → Web UI
-- `/predict` → Sentiment prediction API
-- `/health` → Health check
-- `/docs` → Swagger API documentation
-
-Academic project for AI 510 coursework.
-
-✅ Final Status
-
-✔ Training works
-✔ Prediction works
-✔ UI works
-✔ Docker works
-✔ CI works
-✔ Codespaces compatible
-✔ Demo-safe outputs
+This project demonstrates how machine learning systems can transition from experimentation to cloud deployment using MLOps practices, combining classical NLP models with modern automation and containerization workflows.

@@ -1,6 +1,7 @@
 import os
 import re
 import joblib
+import uvicorn
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
@@ -11,6 +12,8 @@ from pydantic import BaseModel
 ARTIFACTS_DIR = os.getenv("ARTIFACTS_DIR", "model/artifacts")
 DEFAULT_MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "0.55"))
 APP_VERSION = os.getenv("APP_VERSION", "1.3")
+DEPLOY_ENV = os.getenv("DEPLOY_ENV", "local")
+CLOUD_PROVIDER = os.getenv("CLOUD_PROVIDER", "none")
 
 TFIDF_PATH = os.path.join(ARTIFACTS_DIR, "tfidf.pkl")
 MODEL_PATH = os.path.join(ARTIFACTS_DIR, "sentiment_model.pkl")
@@ -19,6 +22,7 @@ POSITIVE_HINTS = {
     "love", "great", "amazing", "awesome", "excellent", "fantastic", "perfect",
     "good", "wonderful", "smooth", "helpful", "best"
 }
+
 NEGATIVE_HINTS = {
     "hate", "worst", "bad", "terrible", "awful", "crash", "crashing", "bug",
     "broken", "useless", "scam", "error", "doesn't work", "does not work",
@@ -27,7 +31,6 @@ NEGATIVE_HINTS = {
 
 app = FastAPI(title="Sentiment Analysis API", version=APP_VERSION)
 
-# Serve UI static files
 app.mount("/ui", StaticFiles(directory="ui"), name="ui")
 
 tfidf = None
@@ -100,7 +103,9 @@ def info():
         "version": APP_VERSION,
         "artifacts_dir": ARTIFACTS_DIR,
         "default_min_confidence": DEFAULT_MIN_CONFIDENCE,
-        "ui_available": True
+        "ui_available": True,
+        "deploy_env": DEPLOY_ENV,
+        "cloud_provider": CLOUD_PROVIDER
     }
 
 
@@ -115,7 +120,6 @@ def predict(req: PredictRequest):
     if not text:
         raise HTTPException(status_code=400, detail="Empty text input.")
 
-    # 1) Keyword override for stability
     override = keyword_override(text)
     if override is not None:
         return {
@@ -123,7 +127,6 @@ def predict(req: PredictRequest):
             "source": "keyword_override"
         }
 
-    # 2) Confidence gate
     min_conf = req.min_confidence if req.min_confidence is not None else DEFAULT_MIN_CONFIDENCE
     try:
         min_conf = float(min_conf)
@@ -159,3 +162,8 @@ def predict(req: PredictRequest):
         "sentiment": pred,
         "source": "model_no_proba"
     }
+
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

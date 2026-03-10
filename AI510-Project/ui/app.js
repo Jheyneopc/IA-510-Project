@@ -11,6 +11,10 @@ const hintTextEl = document.getElementById("hintText");
 const confSlider = document.getElementById("confSlider");
 const confValue = document.getElementById("confValue");
 
+const deployEnvEl = document.getElementById("deployEnv");
+const cloudProviderEl = document.getElementById("cloudProvider");
+const appVersionEl = document.getElementById("appVersion");
+
 function setError(msg) {
   if (!msg) {
     errorEl.classList.add("hidden");
@@ -40,8 +44,21 @@ function setResult({ sentiment, source, confidence }) {
   else hintTextEl.textContent = "Neutral often indicates mixed or low-confidence sentiment.";
 }
 
+async function fetchInfo() {
+  try {
+    const res = await fetch("/info");
+    const data = await res.json();
+    deployEnvEl.textContent = data.deploy_env || "unknown";
+    cloudProviderEl.textContent = data.cloud_provider || "unknown";
+    appVersionEl.textContent = data.version || "unknown";
+  } catch (e) {
+    deployEnvEl.textContent = "unknown";
+    cloudProviderEl.textContent = "unknown";
+    appVersionEl.textContent = "unknown";
+  }
+}
+
 async function predict(text) {
-  // Add demo-safe threshold to request (so you can tune neutral sensitivity)
   const minConfidence = parseFloat(confSlider.value);
 
   const res = await fetch("/predict", {
@@ -51,7 +68,7 @@ async function predict(text) {
   });
 
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.error || "Request failed");
+  if (!res.ok) throw new Error(data?.detail || data?.error || "Request failed");
   return data;
 }
 
@@ -70,7 +87,6 @@ analyzeBtn.addEventListener("click", async () => {
 
   try {
     const out = await predict(text);
-    if (out.error) setError(out.error);
     setResult(out);
   } catch (e) {
     setError(e.message || "Something went wrong.");
@@ -90,7 +106,8 @@ confSlider.addEventListener("input", () => {
   confValue.textContent = parseFloat(confSlider.value).toFixed(2);
 });
 
-// convenience: Ctrl+Enter runs analysis
 reviewEl.addEventListener("keydown", (e) => {
   if (e.ctrlKey && e.key === "Enter") analyzeBtn.click();
 });
+
+fetchInfo();

@@ -3,14 +3,12 @@ import re
 import json
 import argparse
 from datetime import datetime
-
 import joblib
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-
 
 def clean_text(text: str) -> str:
     if not isinstance(text, str):
@@ -20,7 +18,6 @@ def clean_text(text: str) -> str:
     text = re.sub(r"[^a-z0-9\s]", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
-
 
 def label_from_rating(rating):
     try:
@@ -34,10 +31,8 @@ def label_from_rating(rating):
         return "neutral"
     return "positive"
 
-
 def safe_str(x) -> str:
     return x if isinstance(x, str) else ""
-
 
 def main():
     parser = argparse.ArgumentParser(
@@ -80,7 +75,7 @@ def main():
     if args.title_col is not None and args.title_col not in df.columns:
         raise ValueError(f"Title column '{args.title_col}' not found. Available: {list(df.columns)}")
 
-    # Build label
+    # Build labels
     if args.use_rating:
         if args.rating_col not in df.columns:
             raise ValueError(f"Rating column '{args.rating_col}' not found. Available: {list(df.columns)}")
@@ -168,6 +163,10 @@ def main():
     metrics = {
         "created_at_utc": datetime.utcnow().isoformat() + "Z",
         "accuracy": float(acc),
+        "macro_f1": float(report_dict["macro avg"]["f1-score"]),
+        "weighted_f1": float(report_dict["weighted avg"]["f1-score"]),
+        "weighted_precision": float(report_dict["weighted avg"]["precision"]),
+        "weighted_recall": float(report_dict["weighted avg"]["recall"]),
         "labels_order": labels_order,
         "confusion_matrix": cm.tolist(),
         "report": report_dict,
@@ -209,7 +208,6 @@ def main():
     print(f" - {tfidf_path}")
     print(f" - {model_path}")
     print(f" - {metrics_path}")
-
 
 if __name__ == "__main__":
     main()
