@@ -273,6 +273,41 @@ No manual terminal prediction is required during presentation.
 
 📄 License
 
+## Azure Container Apps Deployment
+
+This project supports cloud deployment using Azure Container Apps with Azure Container Registry.
+
+### Required GitHub Secrets
+Add these in **GitHub → Settings → Secrets and variables → Actions**:
+
+- `AZURE_CREDENTIALS`
+- `AZURE_RG`
+- `AZURE_ACR_NAME`
+- `AZURE_CONTAINERAPP_ENV`
+- `AZURE_CONTAINERAPP_NAME`
+
+### Deployment Behavior
+On every push to `main`, GitHub Actions will:
+
+- Build the Docker image from `AI510-Project/`
+- Push it through the Azure deploy action
+- Deploy the application to Azure Container Apps
+
+### Runtime Environment Variables
+The deployment uses:
+
+- `PORT=8000`
+- `ARTIFACTS_DIR=model/artifacts`
+- `MIN_CONFIDENCE=0.55`
+
+### Cloud Endpoints
+After deployment, the Azure URL supports:
+
+- `/` → Web UI
+- `/predict` → Sentiment prediction API
+- `/health` → Health check
+- `/docs` → Swagger API documentation
+
 Academic project for AI 510 coursework.
 
 ✅ Final Status

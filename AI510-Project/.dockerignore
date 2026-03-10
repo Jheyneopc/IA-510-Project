@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.venv/
+venv/
+ENV/
+
+.git/
+.github/
+
+.ipynb_checkpoints/
+.DS_Store
+
+# If you are using Option B (train in CD), don't ignore artifacts.
+# If you are using Option A and artifacts are committed, also don't ignore them.
+# So: do NOT add model/artifacts here.
+
+# Optional: ignore local-only data copies (keep dataset if training in CI/CD)
+# dataset/*.csv

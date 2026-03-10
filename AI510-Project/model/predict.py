@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import re
 import joblib
@@ -9,7 +10,7 @@ POSITIVE_HINTS = {
 }
 NEGATIVE_HINTS = {
     "hate", "worst", "bad", "terrible", "awful", "crash", "crashing", "bug",
-    "broken", "useless", "scam", "error", "doesn't work", "does not work",
+    "broken", "useless", "scam", "error",
     "slow", "freeze", "freezing", "lag", "laggy"
 }
 
@@ -18,6 +19,7 @@ def normalize(text: str) -> str:
 
 def keyword_override(text: str):
     t = normalize(text)
+
     for phrase in ["doesn't work", "does not work"]:
         if phrase in t:
             return "negative"
@@ -29,12 +31,15 @@ def keyword_override(text: str):
         return "positive"
     return None
 
+def emit(payload: dict):
+    print(json.dumps(payload, ensure_ascii=False))
+
 def main():
-    parser = argparse.ArgumentParser(description="Run sentiment prediction using saved artifacts (demo-safe)")
+    parser = argparse.ArgumentParser(description="Run sentiment prediction using saved artifacts")
     parser.add_argument("--text", required=True, help="Input text to classify")
     parser.add_argument("--artifacts_dir", default="model/artifacts", help="Path to artifacts directory")
     parser.add_argument("--min_confidence", type=float, default=0.55,
-                        help="If model confidence is below this, return 'neutral' (default: 0.55)")
+                        help="If model confidence is below this, return 'neutral'")
     args = parser.parse_args()
 
     tfidf_path = os.path.join(args.artifacts_dir, "tfidf.pkl")
@@ -47,12 +52,14 @@ def main():
 
     text = args.text.strip()
     if not text:
-        print({"sentiment": None, "error": "Empty text"})
+        emit({"sentiment": None, "error": "Empty text"})
         return
+
+    min_conf = max(0.0, min(1.0, float(args.min_confidence)))
 
     override = keyword_override(text)
     if override is not None:
-        print({"sentiment": override, "source": "keyword_override"})
+        emit({"sentiment": override, "source": "keyword_override"})
         return
 
     tfidf = joblib.load(tfidf_path)
@@ -67,13 +74,13 @@ def main():
         best_label = classes[best_idx]
         best_conf = float(probs[best_idx])
 
-        if best_conf < args.min_confidence:
-            print({"sentiment": "neutral", "source": "confidence_gate", "confidence": best_conf})
+        if best_conf < min_conf:
+            emit({"sentiment": "neutral", "source": "confidence_gate", "confidence": best_conf})
         else:
-            print({"sentiment": best_label, "source": "model", "confidence": best_conf})
+            emit({"sentiment": best_label, "source": "model", "confidence": best_conf})
     else:
         pred = model.predict(X)[0]
-        print({"sentiment": pred, "source": "model_no_proba"})
+        emit({"sentiment": pred, "source": "model_no_proba"})
 
 if __name__ == "__main__":
     main()

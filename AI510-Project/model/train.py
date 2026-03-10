@@ -2,12 +2,15 @@ import os
 import re
 import json
 import argparse
+from datetime import datetime
+
 import joblib
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
 
 def clean_text(text: str) -> str:
     if not isinstance(text, str):
@@ -17,6 +20,7 @@ def clean_text(text: str) -> str:
     text = re.sub(r"[^a-z0-9\s]", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
+
 
 def label_from_rating(rating):
     try:
@@ -30,16 +34,20 @@ def label_from_rating(rating):
         return "neutral"
     return "positive"
 
+
 def safe_str(x) -> str:
     return x if isinstance(x, str) else ""
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Train TF-IDF + Logistic Regression sentiment model")
+    parser = argparse.ArgumentParser(
+        description="Train TF-IDF + Logistic Regression sentiment model"
+    )
 
     # Data
     parser.add_argument("--data_path", type=str, required=True, help="Path to CSV dataset")
-    parser.add_argument("--text_col", type=str, required=True, help="Main text column (e.g., review_description)")
-    parser.add_argument("--title_col", type=str, default=None, help="Optional title column to concatenate (e.g., review_title)")
+    parser.add_argument("--text_col", type=str, required=True, help="Main text column")
+    parser.add_argument("--title_col", type=str, default=None, help="Optional title column")
 
     # Labels
     parser.add_argument("--label_col", type=str, default="sentiment", help="Label column if not using rating")
@@ -64,8 +72,8 @@ def main():
         raise FileNotFoundError(f"File not found: {args.data_path}")
 
     df = pd.read_csv(args.data_path)
+    original_rows = len(df)
 
-    # Validate columns
     if args.text_col not in df.columns:
         raise ValueError(f"Text column '{args.text_col}' not found. Available: {list(df.columns)}")
 
@@ -84,7 +92,7 @@ def main():
             )
         df["label"] = df[args.label_col].astype(str).str.lower().str.strip()
 
-    # Build combined text (optional title + description)
+    # Build combined text
     if args.title_col:
         combined = df[args.title_col].apply(safe_str) + " " + df[args.text_col].apply(safe_str)
         df["text_raw"] = combined.str.strip()
@@ -100,9 +108,10 @@ def main():
     if len(df) < 50:
         raise ValueError("Too few rows after cleaning. Check column names and label values.")
 
-    # Report dataset stats
     label_counts = df["label"].value_counts().to_dict()
+
     print("\n=== DATASET SUMMARY ===")
+    print(f"Rows before cleaning: {original_rows}")
     print(f"Rows after cleaning: {len(df)}")
     print("Label distribution:", label_counts)
 
@@ -123,7 +132,7 @@ def main():
     X_train_vec = tfidf.fit_transform(X_train)
     X_test_vec = tfidf.transform(X_test)
 
-    # Train model
+    # Train
     model = LogisticRegression(
         max_iter=args.max_iter,
         class_weight="balanced",
@@ -144,7 +153,7 @@ def main():
     print(f"Accuracy: {acc:.4f}")
     print("\nClassification Report:")
     print(report_text)
-    print("\nConfusion Matrix (rows=true, cols=pred) labels:", labels_order)
+    print("\nConfusion Matrix (rows=true, cols=pred):", labels_order)
     print(cm)
 
     # Save artifacts
@@ -157,10 +166,18 @@ def main():
     joblib.dump(model, model_path)
 
     metrics = {
+        "created_at_utc": datetime.utcnow().isoformat() + "Z",
         "accuracy": float(acc),
         "labels_order": labels_order,
         "confusion_matrix": cm.tolist(),
         "report": report_dict,
+        "summary_metrics": {
+            "macro_f1": float(report_dict["macro avg"]["f1-score"]),
+            "weighted_f1": float(report_dict["weighted avg"]["f1-score"]),
+            "weighted_precision": float(report_dict["weighted avg"]["precision"]),
+            "weighted_recall": float(report_dict["weighted avg"]["recall"]),
+        },
+        "rows_before_cleaning": int(original_rows),
         "rows_after_cleaning": int(len(df)),
         "label_distribution": label_counts,
         "test_size": float(args.test_size),
@@ -192,6 +209,7 @@ def main():
     print(f" - {tfidf_path}")
     print(f" - {model_path}")
     print(f" - {metrics_path}")
+
 
 if __name__ == "__main__":
     main()
